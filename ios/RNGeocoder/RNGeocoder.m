@@ -1,8 +1,7 @@
 #import "RNGeocoder.h"
 
 #import <CoreLocation/CoreLocation.h>
-
-#import "RCTConvert.h"
+#import <React/RCTConvert.h>
 
 @implementation RCTConvert (CoreLocation)
 
