@@ -31,6 +31,39 @@ public class RNGeocoderModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void geocodeAddressWithLanguage(String addressName, String language, Promise promise) {
+        if (!geocoder.isPresent()) {
+            promise.reject("NOT_AVAILABLE", "Geocoder not available for this platform");
+            return;
+        }
+        
+        try {
+            List<Address> addresses = geocoder.getFromLocationName(addressName, 20);
+            promise.resolve(transform(addresses));
+        }
+        
+        catch (IOException e) {
+            promise.reject(e);
+        }
+    }
+    
+    @ReactMethod
+    public void geocodePositionWithLanguage(ReadableMap position, String language, Promise promise) {
+        if (!geocoder.isPresent()) {
+            promise.reject("NOT_AVAILABLE", "Geocoder not available for this platform");
+            return;
+        }
+        
+        try {
+            List<Address> addresses = geocoder.getFromLocation(position.getDouble("lat"), position.getDouble("lng"), 20);
+            promise.resolve(transform(addresses));
+        }
+        catch (IOException e) {
+            promise.reject(e);
+        }
+    }
+    
+    @ReactMethod
     public void geocodeAddress(String addressName, Promise promise) {
         if (!geocoder.isPresent()) {
           promise.reject("NOT_AVAILABLE", "Geocoder not available for this platform");

@@ -22,16 +22,83 @@
 
 RCT_EXPORT_MODULE();
 
+
+RCT_EXPORT_METHOD(geocodePositionWithLanguage:(CLLocation *)location
+                  
+                  language:(NSString *)language
+                  
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+    if (!self.geocoder) {
+        self.geocoder = [[CLGeocoder alloc] init];
+    }
+    
+    if (self.geocoder.geocoding) {
+        [self.geocoder cancelGeocode];
+    }
+    
+    [[NSUserDefaults standardUserDefaults]removeObjectForKey:@"AppleLanguages"];
+    NSString * oldLang = [[NSLocale preferredLanguages] objectAtIndex:0];
+    self.oldLanguage = oldLang;
+    [[NSUserDefaults standardUserDefaults] setObject:[NSArray arrayWithObjects:language, nil] forKey:@"AppleLanguages"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    [self.geocoder reverseGeocodeLocation:location completionHandler:^(NSArray *placemarks, NSError *error) {
+        
+        if (error) {
+            if (placemarks.count == 0) {
+                return reject(@"NOT_FOUND", @"geocodePosition failed", error);
+            }
+            
+            return reject(@"ERROR", @"geocodePosition failed", error);
+        }
+        
+        resolve([self placemarksToDictionary:placemarks]);
+        
+    }];
+}
+
+RCT_EXPORT_METHOD(geocodeAddressWithLanguage:(NSString *)address
+                  
+                  language:(NSString *)language
+                  
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+    if (!self.geocoder) {
+        self.geocoder = [[CLGeocoder alloc] init];
+    }
+    
+    if (self.geocoder.geocoding) {
+        [self.geocoder cancelGeocode];
+    }
+    
+    [[NSUserDefaults standardUserDefaults]removeObjectForKey:@"AppleLanguages"];
+    NSString * oldLang = [[NSLocale preferredLanguages] objectAtIndex:0];
+    self.oldLanguage = oldLang;
+    [[NSUserDefaults standardUserDefaults] setObject:[NSArray arrayWithObjects:language, nil] forKey:@"AppleLanguages"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    [self.geocoder geocodeAddressString:address completionHandler:^(NSArray *placemarks, NSError *error) {
+        
+        if (error) {
+            if (placemarks.count == 0) {
+                return reject(@"NOT_FOUND", @"geocodeAddress failed", error);
+            }
+            
+            return reject(@"ERROR", @"geocodeAddress failed", error);
+        }
+        
+        resolve([self placemarksToDictionary:placemarks]);
+    }];
+}
+
+
 RCT_EXPORT_METHOD(geocodePosition:(CLLocation *)location
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-    [[NSUserDefaults standardUserDefaults]removeObjectForKey:@"AppleLanguages"];
-    NSString * language = [[NSLocale preferredLanguages] objectAtIndex:0];
-    self.oldLanguage = language;
-    NSLog(@"OLD LANG %@", self.oldLanguage);
-    [[NSUserDefaults standardUserDefaults] setObject:[NSArray arrayWithObjects:@"en", nil] forKey:@"AppleLanguages"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
     if (!self.geocoder) {
         self.geocoder = [[CLGeocoder alloc] init];
     }
@@ -120,8 +187,14 @@ RCT_EXPORT_METHOD(geocodeAddress:(NSString *)address
         
         [results addObject:result];
     }
-    [[NSUserDefaults standardUserDefaults] setObject:[NSArray arrayWithObjects:self.oldLanguage, nil] forKey:@"AppleLanguages"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    
+    if(self.oldLanguage){
+        [[NSUserDefaults standardUserDefaults] setObject:[NSArray arrayWithObjects:self.oldLanguage, nil] forKey:@"AppleLanguages"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        self.oldLanguage = nil;
+    }
+    
     return results;
     
 }
