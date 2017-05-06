@@ -1,5 +1,5 @@
-#import <React/RCTBridgeModule.h>
-#import <React/RCTConvert.h>
+#import "RCTBridgeModule.h"
+#import "RCTConvert.h"
 
 #import <CoreLocation/CoreLocation.h>
 
@@ -9,4 +9,5 @@
 
 @interface RNGeocoder : NSObject<RCTBridgeModule>
 @property (nonatomic, strong) CLGeocoder *geocoder;
+@property (nonatomic, strong) NSString *oldLanguage;
 @end
