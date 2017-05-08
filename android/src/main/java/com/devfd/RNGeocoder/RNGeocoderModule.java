@@ -1,7 +1,10 @@
 package com.devfd.RNGeocoder;
 
+import android.content.Context;
+import android.content.res.Resources;
 import android.location.Address;
 import android.location.Geocoder;
+import android.util.DisplayMetrics;
 
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -15,14 +18,20 @@ import com.facebook.react.bridge.WritableNativeMap;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 public class RNGeocoderModule extends ReactContextBaseJavaModule {
 
     private Geocoder geocoder;
+    private Context mContext;
+    private String DEFAULT_LANGUAGE = "en";
+    private String userLanguage = "";
 
     public RNGeocoderModule(ReactApplicationContext reactContext) {
         super(reactContext);
+        this.mContext = reactContext.getApplicationContext();
         geocoder = new Geocoder(reactContext.getApplicationContext());
+        this.userLanguage = Locale.getDefault().getLanguage();
     }
 
     @Override
@@ -37,6 +46,11 @@ public class RNGeocoderModule extends ReactContextBaseJavaModule {
           return;
         }
 
+        // change to default language (english)
+        if (!this.userLanguage.equals(DEFAULT_LANGUAGE)){
+            setSystemLocaleLanguage(DEFAULT_LANGUAGE);
+        }
+
         try {
             List<Address> addresses = geocoder.getFromLocationName(addressName, 20);
             promise.resolve(transform(addresses));
@@ -44,6 +58,11 @@ public class RNGeocoderModule extends ReactContextBaseJavaModule {
 
         catch (IOException e) {
             promise.reject(e);
+        } finally {
+            // change locale language bact to user language
+            if (!this.userLanguage.equals(DEFAULT_LANGUAGE)){
+                setSystemLocaleLanguage(this.userLanguage);
+            }
         }
     }
 
@@ -54,12 +73,22 @@ public class RNGeocoderModule extends ReactContextBaseJavaModule {
             return;
         }
 
+        // change to default language (english)
+        if (!this.userLanguage.equals(DEFAULT_LANGUAGE)){
+            setSystemLocaleLanguage(DEFAULT_LANGUAGE);
+        }
+
         try {
             List<Address> addresses = geocoder.getFromLocation(position.getDouble("lat"), position.getDouble("lng"), 20);
             promise.resolve(transform(addresses));
         }
         catch (IOException e) {
             promise.reject(e);
+        } finally {
+            // change locale language bact to user language
+            if (!this.userLanguage.equals(DEFAULT_LANGUAGE)){
+                setSystemLocaleLanguage(this.userLanguage);
+            }
         }
     }
 
@@ -111,5 +140,12 @@ public class RNGeocoderModule extends ReactContextBaseJavaModule {
         }
 
         return results;
+    }
+
+    public void setSystemLocaleLanguage(String locLang){
+        Resources res = this.mContext.getResources();
+        android.content.res.Configuration conf = res.getConfiguration();
+        conf.setLocale(new Locale(locLang));
+        this.mContext.createConfigurationContext(conf);
     }
 }
